@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Varnix Network - minecraft sunucusu</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #0b0716;
+            --card-bg: rgba(22, 15, 41, 0.75);
+            --card-inner: rgba(31, 21, 58, 0.6);
+            --primary-purple: #7c3aed;
+            --primary-purple-hover: #6d28d9;
+            --light-purple: #a78bfa;
+            --neon-cyan: #06b6d4;
+            --text-white: #ffffff;
+            --border-purple: rgba(139, 92, 246, 0.25);
+            --radius-main: 24px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(124, 58, 237, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.15) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        .wrapper { width: 100%; max-width: 1100px; display: flex; flex-direction: column; gap: 20px; }
+
+        .navbar {
+            background: var(--card-bg);
+            border: 1px solid var(--border-purple);
+            backdrop-filter: blur(12px);
+            border-radius: 18px;
+            padding: 14px 28px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .brand-logo { display: flex; align-items: center; gap: 12px; }
+        .brand-icon {
+            background: linear-gradient(135deg, var(--primary-purple), var(--neon-cyan));
+            width: 38px; height: 38px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; box-shadow: 0 0 12px rgba(124, 58, 237, 0.5);
+        }
+        .brand-title { font-weight: 800; font-size: 1.2rem; line-height: 1.1; }
+        .brand-title span { display: block; font-size: 0.65rem; color: var(--neon-cyan); letter-spacing: 2px; }
+
+        .nav-menu {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(15, 10, 30, 0.6); padding: 6px; border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .nav-item {
+            color: #d8b4fe; text-decoration: none; padding: 8px 18px;
+            border-radius: 10px; font-size: 0.9rem; font-weight: 600;
+            display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+            cursor: pointer;
+        }
+        .nav-item:hover, .nav-item.active { background: var(--primary-purple); color: white; }
+
+        .btn {
+            border: none; outline: none; padding: 10px 20px; border-radius: 12px;
+            font-weight: 700; font-size: 0.9rem; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+        }
+        .btn-login { background: rgba(255, 255, 255, 0.08); color: white; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-register { background: var(--neon-cyan); color: #000; }
+        .btn-purple { background: var(--primary-purple); color: white; }
+
+        .hero-banner {
+            background: var(--card-bg); border: 1px solid var(--border-purple);
+            border-radius: var(--radius-main); padding: 48px; backdrop-filter: blur(12px);
+            display: flex; flex-direction: column; gap: 24px;
+        }
+        .hero-badge {
+            align-self: flex-start; background: rgba(124, 58, 237, 0.2);
+            border: 1px solid rgba(167, 139, 250, 0.3); color: #c4b5fd;
+            padding: 6px 16px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+        }
+        .hero-title { font-size: 3rem; font-weight: 800; line-height: 1.15; }
+        .hero-title span { color: var(--neon-cyan); }
+        .hero-description { color: #c4b5fd; font-size: 0.95rem; max-width: 600px; }
+        .hero-actions { display: flex; align-items: center; gap: 16px; }
+
+        .ip-card {
+            background: rgba(10, 6, 22, 0.8); border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 8px 8px 20px; border-radius: 14px; display: flex; align-items: center; gap: 20px;
+        }
+        .ip-text { font-family: monospace; font-weight: 700; color: white; }
+        .btn-copy {
+            background: rgba(6, 182, 212, 0.15); color: var(--neon-cyan);
+            border: 1px solid rgba(6, 182, 212, 0.3); padding: 8px 16px;
+            border-radius: 10px; font-weight: 700; cursor: pointer;
+        }
+
+        .support-panel {
+            background: var(--card-bg); border: 1px solid var(--border-purple);
+            border-radius: var(--radius-main); padding: 32px; display: flex;
+            flex-direction: column; gap: 20px;
+        }
+        .support-header { display: flex; justify-content: space-between; align-items: center; }
+
+        .ticket-card {
+            background: var(--card-inner); border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px; padding: 20px; margin-bottom: 12px;
+        }
+        .ticket-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .ticket-user { font-weight: 700; color: var(--neon-cyan); display: flex; align-items: center; gap: 8px; }
+
+        .chat-messages {
+            background: rgba(0, 0, 0, 0.25); border-radius: 10px; padding: 12px;
+            margin: 12px 0; display: flex; flex-direction: column; gap: 8px;
+            max-height: 200px; overflow-y: auto;
+        }
+        .chat-msg { font-size: 0.88rem; padding: 6px 12px; border-radius: 8px; max-width: 80%; }
+        .msg-player { background: rgba(124, 58, 237, 0.25); border: 1px solid rgba(124, 58, 237, 0.4); align-self: flex-start; }
+        .msg-admin { background: rgba(6, 182, 212, 0.25); border: 1px solid rgba(6, 182, 212, 0.4); align-self: flex-end; }
+
+        .reply-box { display: flex; gap: 8px; }
+        .reply-input {
+            flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; padding: 8px 12px; color: white; outline: none;
+        }
+
+        .modal-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; pointer-events: none; transition: all 0.2s;
+        }
+        .modal-backdrop.active { opacity: 1; pointer-events: all; }
+        .modal-card {
+            background: #130c25; border: 1px solid var(--border-purple);
+            border-radius: 20px; padding: 32px; width: 100%; max-width: 460px;
+            display: flex; flex-direction: column; gap: 16px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.85rem; color: #c4b5fd; font-weight: 600; }
+        .form-input {
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1);
+            padding: 10px 14px; border-radius: 10px; color: white; outline: none;
+        }
+
+        .rules-list {
+            display: flex; flex-direction: column; gap: 10px;
+            max-height: 280px; overflow-y: auto; padding-right: 6px;
+        }
+        .rule-item {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 12px; border-radius: 10px; font-size: 0.88rem; color: #d8b4fe;
+            display: flex; align-items: flex-start; gap: 10px;
+        }
+        .rule-item i { color: var(--neon-cyan); margin-top: 3px; }
+
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; background: var(--primary-purple);
+            color: white; padding: 12px 24px; border-radius: 12px; font-weight: 700;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 10px;
+            transform: translateY(100px); opacity: 0; transition: all 0.3s;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="wrapper">
+        <header class="navbar">
+            <div class="brand-logo">
+                <div class="brand-icon"><i class="fa-solid fa-cube"></i></div>
+                <div class="brand-title">VARNIX<span>NETWORK</span></div>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i> Ana Sayfa</a>
+                <a onclick="openRulesModal()" class="nav-item"><i class="fa-solid fa-scroll"></i> Kurallar</a>
+                <a href="#destek-bolumu" class="nav-item"><i class="fa-solid fa-headset"></i> Destek Sistem</a>
+            </nav>
+            <div class="auth-buttons" id="user-area">
+                <button class="btn btn-login" onclick="openAuthModal()"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</button>
+                <button class="btn btn-register" onclick="openAuthModal()"><i class="fa-solid fa-user-plus"></i> Kayıt Ol</button>
+            </div>
+        </header>
+
+        <section class="hero-banner">
+            <div class="hero-badge">VarnixSMP 1. Sezon Yayında! •</div>
+            <h1 class="hero-title">Efsanevi <span>Minecraft</span> <br>Macerana Başla!</h1>
+            <p class="hero-description">
+                Özel eklentiler, kesintisiz PvP, gelişmiş ekonomi ve 7/24 aktif yetkili ekibi ile Türkiye'nin en iddialı Minecraft topluluğuna sen de katıl.
+            </p>
+            <div class="hero-actions">
+                <div class="ip-card">
+                    <span class="ip-text">jakarta-lanes.tun.ply.gg</span>
+                    <button class="btn-copy" onclick="copyIP()"><i class="fa-regular fa-copy"></i> Kopyala</button>
+                </div>
+                <button class="btn btn-purple" onclick="openTicketModal()"><i class="fa-solid fa-headset"></i> Destek Talebi Aç</button>
+            </div>
+        </section>
+
+        <section class="support-panel" id="destek-bolumu">
+            <div class="support-header">
+                <h2><i class="fa-solid fa-comments" style="color: var(--neon-cyan);"></i> Canlı Destek Talepleri</h2>
+                <button class="btn btn-purple" onclick="openTicketModal()"><i class="fa-solid fa-plus"></i> Yeni Bilet Oluştur</button>
+            </div>
+            <div id="tickets-container">
+                <p style="color: #c4b5fd; text-align: center; padding: 20px;">Talepleri görmek için lütfen giriş yapın.</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Rules Modal -->
+    <div class="modal-backdrop" id="rules-modal">
+        <div class="modal-card">
+            <h3><i class="fa-solid fa-scroll" style="color: var(--neon-cyan);"></i> Sunucu Kuralları</h3>
+            <div class="rules-list">
+                <div class="rule-item">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <div><strong>Hile ve Üçüncü Taraf Yazılım:</strong> Oyun içi haksız avantaj sağlayan makro, x-ray, hile veya modların kullanımı süresiz ban sebebidir.</div>
+                </div>
+                <div class="rule-item">
+                    <i class="fa-solid fa-comment-slash"></i>
+                    <div><strong>Sohbet Kuralları:</strong> Hakaret, küfür, argo, siyaset ve oyuncuları rahatsız edici söylemler yasaktır.</div>
+                </div>
+                <div class="rule-item">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <div><strong>Reklam Yasaktır:</strong> Başka sunucu, Discord veya ticari bağlantıların paylaşılması kalıcı uzaklaştırma sebebidir.</div>
+                </div>
+                <div class="rule-item">
+                    <i class="fa-solid fa-bug"></i>
+                    <div><strong>Açık Kullanımı:</strong> Sunucudaki bug veya açıkları kendi yararına kullanmak kesinlikle yasaktır, bildirilmelidir.</div>
+                </div>
+                <div class="rule-item">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <div><strong>Yetkili Sorumluluğu:</strong> Yetkili ekibe saygısızlık yapmak ve asılsız talepler açmak yaptırım sebebidir.</div>
+                </div>
+            </div>
+            <button class="btn btn-purple" onclick="closeRulesModal()" style="justify-content: center; width: 100%;">Anladım, Kapat</button>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div class="modal-backdrop" id="auth-modal">
+        <div class="modal-card">
+            <h3>Giriş Yap / Kayıt Ol</h3>
+            <form onsubmit="handleAuth(event)">
+                <div class="form-group">
+                    <label>Minecraft Kullanıcı Adı</label>
+                    <input type="text" id="auth-user" class="form-input" required placeholder="Oyundaki adınız">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Şifre</label>
+                    <input type="password" id="auth-pass" class="form-input" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-purple" style="width: 100%; margin-top: 16px; justify-content: center;">Giriş Yap / Kayıt Ol</button>
+            </form>
+            <button class="btn btn-login" onclick="closeAuthModal()" style="justify-content: center;">Kapat</button>
+        </div>
+    </div>
+
+    <!-- Ticket Modal -->
+    <div class="modal-backdrop" id="ticket-modal">
+        <div class="modal-card">
+            <h3>Yeni Destek Talebi</h3>
+            <form onsubmit="createTicket(event)">
+                <div class="form-group">
+                    <label>Konu</label>
+                    <input type="text" id="ticket-subject" class="form-input" required placeholder="Örn: Ödeme/Oyun Sorunu">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Mesajınız</label>
+                    <textarea id="ticket-msg" class="form-input" rows="4" required placeholder="Açıklamanız..."></textarea>
+                </div>
+                <button type="submit" class="submit-btn btn btn-purple" style="width: 100%; margin-top: 16px; justify-content: center;">Talebi Gönder</button>
+            </form>
+            <button class="btn btn-login" onclick="closeTicketModal()" style="justify-content: center;">Kapat</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <i class="fa-solid fa-circle-check"></i> <span id="toast-text">İşlem başarılı.</span>
+    </div>
+
+    <script>
+        // Firebase Konfigürasyonu
+        const firebaseConfig = {
+            databaseURL: "https://varnix-network-default-rtdb.europe-west1.firebasedatabase.app"
+        };
+
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        
+        const db = firebase.database();
+        const authorizedAdmins = ["hakantheberat19", "hakan_the_berat19"];
+        let currentUser = localStorage.getItem('varnix_user') || null;
+
+        if (currentUser) {
+            updateUserUI();
+            startRealtimeListener();
+        }
+
+        // Firebase Üzerinden Kayıt & Giriş İşlemi
+        function handleAuth(e) {
+            e.preventDefault();
+            const username = document.getElementById('auth-user').value.trim();
+            const password = document.getElementById('auth-pass').value.trim();
+            if (!username || !password) return;
+
+            const userKey = username.toLowerCase().replace(/[\.\#\$\[\]]/g, "_");
+            const userRef = db.ref('users/' + userKey);
+
+            userRef.once('value').then(snapshot => {
+                if (snapshot.exists()) {
+                    const userData = snapshot.val();
+                    if (userData.password === password) {
+                        loginSuccess(userData.username || username);
+                        showToast("Hoş geldiniz, " + username);
+                    } else {
+                        showToast("Hata: Şifre yanlış!");
+                    }
+                } else {
+                    userRef.set({
+                        username: username,
+                        password: password,
+                        createdAt: Date.now()
+                    }, (error) => {
+                        if (!error) {
+                            loginSuccess(username);
+                            showToast("Kayıt Başarılı ve Giriş Yapıldı!");
+                        } else {
+                            showToast("Hata: Veritabanına yazılamadı.");
+                        }
+                    });
+                }
+            }).catch(err => {
+                showToast("Veritabanı hatası! İzinleri kontrol edin.");
+            });
+        }
+
+        function loginSuccess(username) {
+            currentUser = username;
+            localStorage.setItem('varnix_user', currentUser);
+            updateUserUI();
+            closeAuthModal();
+            startRealtimeListener();
+            document.getElementById('auth-pass').value = '';
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('varnix_user');
+            currentUser = null;
+            updateUserUI();
+            db.ref("tickets").off();
+            document.getElementById('tickets-container').innerHTML = `<p style="color: #c4b5fd; text-align: center; padding: 20px;">Talepleri görmek için lütfen giriş yapın.</p>`;
+            showToast("Çıkış yapıldı.");
+        }
+
+        function updateUserUI() {
+            const userArea = document.getElementById('user-area');
+            if (currentUser) {
+                const isAdmin = authorizedAdmins.includes(currentUser.toLowerCase());
+                userArea.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span style="font-weight:700; color:var(--neon-cyan);"><i class="fa-regular fa-user"></i> ${currentUser} ${isAdmin ? '<span style="color:#f43f5e; font-size:0.75rem;">[YETKİLİ]</span>' : ''}</span>
+                        <button class="btn btn-login" onclick="handleLogout()"><i class="fa-solid fa-right-from-bracket"></i> Çıkış</button>
+                    </div>
+                `;
+            } else {
+                userArea.innerHTML = `
+                    <button class="btn btn-login" onclick="openAuthModal()"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</button>
+                    <button class="btn btn-register" onclick="openAuthModal()"><i class="fa-solid fa-user-plus"></i> Kayıt Ol</button>
+                `;
+            }
+        }
+
+        // Cihazlar ve Tarayıcılar Arası CANLI (Realtime) Senkronizasyon
+        function startRealtimeListener() {
+            db.ref("tickets").on("value", snapshot => {
+                const container = document.getElementById('tickets-container');
+                container.innerHTML = '';
+                const data = snapshot.val();
+
+                if (!data) {
+                    container.innerHTML = `<p style="color: #c4b5fd; text-align: center; padding: 20px;">Henüz aktif bir bilet yok.</p>`;
+                    return;
+                }
+
+                let hasTicket = false;
+                Object.keys(data).reverse().forEach(key => {
+                    const ticket = data[key];
+                    const isAdmin = authorizedAdmins.includes(currentUser?.toLowerCase());
+
+                    if (isAdmin || (ticket.author && ticket.author.toLowerCase() === currentUser?.toLowerCase())) {
+                        hasTicket = true;
+                        const card = document.createElement('div');
+                        card.className = 'ticket-card';
+
+                        let replies = ticket.replies ? Object.values(ticket.replies) : [];
+                        let messagesHTML = replies.map(r => `
+                            <div class="chat-msg ${authorizedAdmins.includes(r.sender.toLowerCase()) ? 'msg-admin' : 'msg-player'}">
+                                <strong>${r.sender}:</strong> ${r.text}
+                            </div>
+                        `).join('');
+
+                        card.innerHTML = `
+                            <div class="ticket-header">
+                                <span class="ticket-user"><i class="fa-solid fa-user-gear"></i> ${ticket.author} - ${ticket.subject}</span>
+                                <span style="font-size:0.8rem; padding:4px 8px; border-radius:6px; background:rgba(6,182,212,0.2); color:var(--neon-cyan);">Açık</span>
+                            </div>
+                            <p style="font-size:0.9rem; color:#d8b4fe;">${ticket.message}</p>
+                            <div class="chat-messages">${messagesHTML}</div>
+                            <div class="reply-box">
+                                <input type="text" class="reply-input" id="reply-input-${key}" placeholder="Yanıt yazınız...">
+                                <button class="btn btn-purple" onclick="sendReply('${key}')">Gönder</button>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    }
+                });
+
+                if (!hasTicket) {
+                    container.innerHTML = `<p style="color: #c4b5fd; text-align: center; padding: 20px;">Size ait destek talebi bulunamadı.</p>`;
+                }
+            });
+        }
+
+        // Bilet Oluşturma Düzeltildi
+        function createTicket(e) {
+            e.preventDefault();
+            if (!currentUser) return openAuthModal();
+
+            const subject = document.getElementById('ticket-subject').value.trim();
+            const message = document.getElementById('ticket-msg').value.trim();
+
+            if (!subject || !message) return;
+
+            const ticketsRef = db.ref("tickets");
+            const newTicketRef = ticketsRef.push();
+
+            newTicketRef.set({
+                subject: subject,
+                message: message,
+                author: currentUser,
+                timestamp: Date.now()
+            }).then(() => {
+                showToast("Bilet Oluşturuldu!");
+                closeTicketModal();
+                document.getElementById('ticket-subject').value = '';
+                document.getElementById('ticket-msg').value = '';
+            }).catch((error) => {
+                showToast("Hata: " + error.message);
+            });
+        }
+
+        function sendReply(ticketId) {
+            const input = document.getElementById(`reply-input-${ticketId}`);
+            const text = input.value.trim();
+            if (!text || !currentUser) return;
+
+            db.ref(`tickets/${ticketId}/replies`).push({
+                sender: currentUser,
+                text: text,
+                timestamp: Date.now()
+            }).then(() => {
+                input.value = '';
+                showToast("Yanıt iletildi!");
+            }).catch((error) => {
+                showToast("Yanıt gönderilemedi!");
+            });
+        }
+
+        function openRulesModal() { document.getElementById('rules-modal').classList.add('active'); }
+        function closeRulesModal() { document.getElementById('rules-modal').classList.remove('active'); }
+        function openAuthModal() { document.getElementById('auth-modal').classList.add('active'); }
+        function closeAuthModal() { document.getElementById('auth-modal').classList.remove('active'); }
+        function openTicketModal() { currentUser ? document.getElementById('ticket-modal').classList.add('active') : openAuthModal(); }
+        function closeTicketModal() { document.getElementById('ticket-modal').classList.remove('active'); }
+        function copyIP() {
+            navigator.clipboard.writeText("jakarta-lanes.tun.ply.gg");
+            showToast("IP Adresi Kopyalandı!");
+        }
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = text;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    </script>
+</body>
+</html>
